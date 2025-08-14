@@ -2,64 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Payment Status</title>
+  <title>Redirecting...</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      background: #000;
-      color: #ffbf00;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
-      flex-direction: column;
-    }
-    .status {
-      font-size: 24px;
-      font-weight: bold;
-    }
-    button {
-      background: #ffbf00;
-      border: none;
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
-      border-radius: 6px;
-      margin-top: 15px;
-    }
-  </style>
 </head>
-<body>
+<body style="background:#000; margin:0;">
+<script>
+  // Get status from query params
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('status') || 'unknown';
 
-  <div class="status" id="statusMessage">Processing...</div>
-  <button onclick="openApp()">Open App</button>
-
-  <script>
-    // Extract query params from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status') || 'unknown';
-    const orderId = urlParams.get('order_id') || '';
-
-    // Update status message
-    const statusMessage = document.getElementById('statusMessage');
-    if (status.toLowerCase() === 'success') {
-      statusMessage.textContent = '✅ Payment Successful';
-    } else if (status.toLowerCase() === 'failed') {
-      statusMessage.textContent = '❌ Payment Failed';
-    } else {
-      statusMessage.textContent = 'ℹ️ Payment Status Unknown';
-    }
-
-    // Deep link function
-    function openApp() {
-      window.location.href = `myapp://payment/${status}?order_id=${orderId}`;
-    }
-
-    // Auto-open app after short delay
-    setTimeout(openApp, 2000);
-  </script>
-
+  // Redirect to app immediately (no UI)
+  window.location.href = `myapp://payment/${status}`;
+</script>
 </body>
 </html>

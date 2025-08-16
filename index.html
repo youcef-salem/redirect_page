@@ -7,12 +7,37 @@
 </head>
 <body style="background:#000; margin:0;">
 <script>
-  // Get status from query params
   const params = new URLSearchParams(window.location.search);
-  const status = params.get('status') || 'unknown';
 
-  // Redirect to app immediately (no UI)
-  window.location.href = `myapp://payment/${status}`;
+  // Priority: check for confirmation param first
+  let raw = null;
+  let mode = null;
+
+  if (params.has('confirmation')) {
+    raw = (params.get('confirmation') || '').toLowerCase();
+    mode = 'confirmation';
+  } else if (params.has('status')) {
+    raw = (params.get('status') || '').toLowerCase();
+    mode = 'payment';
+  }
+
+  const allowed = new Set(['success','failed','confirmed']);
+  const value = allowed.has(raw) ? raw : 'unknown';
+
+  // Build deep link
+  const deeplink = mode === 'confirmation'
+      ? `myapp://confirmation/${value}`
+      : `myapp://payment/${value}`;
+
+  // Redirect immediately
+  try {
+    window.location.replace(deeplink);
+  } catch (_) {
+    window.location.href = deeplink;
+  }
+
+  // Last fallback
+  setTimeout(() => { window.location.href = 'about:blank'; }, 4000);
 </script>
 </body>
 </html>

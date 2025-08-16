@@ -1,184 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Email Verification</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .container {
-      text-align: center;
-      max-width: 400px;
-    }
-    .success {
-      color: #4CAF50;
-    }
-    .error {
-      color: #f44336;
-    }
-    .loading {
-      color: #FFC107;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>DjurDjura Verification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            text-align: center;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #FFC107;
+        }
+        .status-message {
+            margin: 20px 0;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+        .loading {
+            color: #FFC107;
+        }
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div id="status" class="loading">
-      <h2>Processing email verification...</h2>
-      <p>Please wait while we verify your email.</p>
+    <div class="container">
+        <img src="logo.png" alt="DjurDjura Logo" class="logo">
+        <div id="status" class="loading">
+            <h2>Processing verification...</h2>
+            <p>Please wait while we verify your email.</p>
+        </div>
     </div>
-  </div>
 
-<script>
-console.log('Redirect page loaded');
-console.log('Current URL:', window.location.href);
-console.log('URL search params:', window.location.search);
+    <script>
+        const APP_SCHEME = 'djurdjura';
+        const DEBUG = true;
 
-const urlParams = new URLSearchParams(window.location.search);
-const statusDiv = document.getElementById('status');
+        function log(...args) {
+            if (DEBUG) {
+                console.log(...args);
+            }
+        }
 
-// Check if this is a Supabase email confirmation callback
-const accessToken = urlParams.get('access_token');
-const refreshToken = urlParams.get('refresh_token');
-const tokenType = urlParams.get('token_type');
-const type = urlParams.get('type');
+        log('🚀 Verification page loaded');
+        log('📍 Current URL:', window.location.href);
 
-console.log('Tokens found:', {
-  access_token: accessToken ? 'present' : 'missing',
-  refresh_token: refreshToken ? 'present' : 'missing',
-  token_type: tokenType,
-  type: type
-});
+        const urlParams = new URLSearchParams(window.location.search);
+        const statusDiv = document.getElementById('status');
 
-function updateStatus(message, className) {
-  statusDiv.innerHTML = `<h2>${message}</h2>`;
-  statusDiv.className = className;
-}
+        // Extract Supabase tokens and parameters
+        const token = urlParams.get('token');
+        const type = urlParams.get('type');
+        const refreshToken = urlParams.get('refresh_token');
+        const tokenType = urlParams.get('token_type');
 
-function redirectToApp(status, tokens = null) {
-  const baseUrl = 'myapp://confirmation/';
-  let deepLink;
-  
-  if (tokens && status === 'confirmed') {
-    // Include tokens in the deep link for successful confirmation
-    const tokenParams = new URLSearchParams({
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      token_type: tokens.token_type || 'bearer',
-      type: tokens.type || 'signup'
-    });
-    deepLink = `${baseUrl}${status}?${tokenParams.toString()}`;
-  } else {
-    deepLink = `${baseUrl}${status}`;
-  }
-  
-  console.log('Redirecting to:', deepLink);
-  
-  try {
-    window.location.replace(deepLink);
-  } catch (error) {
-    console.error('Replace failed:', error);
-    try {
-      window.location.href = deepLink;
-    } catch (error2) {
-      console.error('Href assignment failed:', error2);
-      updateStatus('Failed to redirect to app. Please open the app manually.', 'error');
-    }
-  }
-}
+        log('🔑 Auth parameters:', {
+            token: token ? '✓' : '✗',
+            type,
+            refreshToken: refreshToken ? '✓' : '✗',
+            tokenType
+        });
 
-// Handle different scenarios
-if (accessToken && refreshToken && type === 'signup') {
-  // This is a successful Supabase email confirmation
-  console.log('Email confirmation successful');
-  updateStatus('Email verified successfully! Redirecting to app...', 'success');
-  
-  const tokens = {
-    access_token: accessToken,
-    refresh_token: refreshToken,
-    token_type: tokenType,
-    type: type
-  };
-  
-  setTimeout(() => {
-    redirectToApp('confirmed', tokens);
-  }, 1500);
-  
-} else if (urlParams.get('error')) {
-  // Handle error cases
-  const error = urlParams.get('error');
-  const errorDescription = urlParams.get('error_description');
-  console.log('Email confirmation error:', error, errorDescription);
-  
-  updateStatus(`Verification failed: ${errorDescription || error}`, 'error');
-  
-  setTimeout(() => {
-    redirectToApp('failed');
-  }, 3000);
-  
-} else if (urlParams.get('confirmation') === 'confirmed') {
-  // Legacy confirmation parameter (your original setup)
-  console.log('Legacy confirmation detected');
-  updateStatus('Email verified! Redirecting to app...', 'success');
-  
-  setTimeout(() => {
-    redirectToApp('confirmed');
-  }, 1500);
-  
-} else if (urlParams.get('status')) {
-  // Handle payment status (keeping your original payment logic)
-  const status = urlParams.get('status');
-  console.log('Payment status:', status);
-  
-  setTimeout(() => {
-    const deepLink = `myapp://payment/${status}`;
-    console.log('Redirecting to payment:', deepLink);
-    try {
-      window.location.replace(deepLink);
-    } catch (error) {
-      window.location.href = deepLink;
-    }
-  }, 1500);
-  
-} else {
-  // Check if we have any Supabase parameters even without full tokens
-  const hasSupabaseParams = urlParams.get('type') || urlParams.get('token_hash') || urlParams.get('access_token');
-  
-  if (hasSupabaseParams) {
-    console.log('Partial Supabase callback detected, treating as confirmation');
-    updateStatus('Processing email verification...', 'loading');
-    
-    setTimeout(() => {
-      redirectToApp('confirmed');
-    }, 2000);
-  } else {
-    // Unknown or invalid link
-    console.log('Unknown redirect type');
-    updateStatus('Invalid verification link.', 'error');
-    
-    setTimeout(() => {
-      redirectToApp('failed');
-    }, 3000);
-  }
-}
+        function updateStatus(message, className) {
+            statusDiv.innerHTML = `
+                <h2>${message}</h2>
+                <p id="countdown"></p>
+            `;
+            statusDiv.className = className;
+        }
 
-// Fallback redirect after 10 seconds
-setTimeout(() => {
-  if (document.visibilityState === 'visible') {
-    updateStatus('Redirecting to app...', 'loading');
-    redirectToApp('timeout');
-  }
-}, 10000);
-</script>
+        function startCountdown(seconds) {
+            const countdownElement = document.getElementById('countdown');
+            let timeLeft = seconds;
+
+            const timer = setInterval(() => {
+                countdownElement.textContent = `Redirecting in ${timeLeft} seconds...`;
+                timeLeft--;
+
+                if (timeLeft < 0) {
+                    clearInterval(timer);
+                }
+            }, 1000);
+        }
+
+        function redirectToApp(status, params = {}) {
+            const baseUrl = `${APP_SCHEME}://auth/callback`;
+            const queryParams = new URLSearchParams({
+                status,
+                ...params
+            });
+            const deepLink = `${baseUrl}?${queryParams.toString()}`;
+            
+            log('🔄 Redirecting to:', deepLink);
+
+            // Try multiple redirect methods
+            setTimeout(() => {
+                try {
+                    // Primary method
+                    window.location.replace(deepLink);
+                } catch (error) {
+                    log('⚠️ Primary redirect failed:', error);
+                    try {
+                        // Fallback method
+                        window.location.href = deepLink;
+                    } catch (error2) {
+                        log('❌ All redirect methods failed:', error2);
+                        updateStatus('Failed to open app. Please open it manually.', 'error');
+                    }
+                }
+            }, 500);
+        }
+
+        // Handle Supabase verification flow
+        if (token && type === 'signup') {
+            log('✉️ Processing email verification');
+            updateStatus('Verifying your email...', 'loading');
+
+            // Prepare verification parameters
+            const verificationParams = {
+                token,
+                type: 'signup'
+            };
+
+            // Add optional tokens if present
+            if (refreshToken) {
+                verificationParams.refresh_token = refreshToken;
+            }
+            if (tokenType) {
+                verificationParams.token_type = tokenType;
+            }
+
+            // Start redirect countdown
+            startCountdown(3);
+
+            // Redirect with verification data
+            setTimeout(() => {
+                updateStatus('Email verified! Opening app...', 'success');
+                redirectToApp('verified', verificationParams);
+            }, 3000);
+
+        } else if (urlParams.get('error')) {
+            // Handle verification errors
+            const error = urlParams.get('error');
+            const errorDescription = urlParams.get('error_description');
+            
+            log('❌ Verification error:', error, errorDescription);
+            updateStatus(
+                `Verification failed: ${errorDescription || error}`, 
+                'error'
+            );
+
+            startCountdown(5);
+            setTimeout(() => {
+                redirectToApp('error', { error });
+            }, 5000);
+
+        } else {
+            // Handle unknown or invalid links
+            log('⚠️ Invalid verification parameters');
+            updateStatus('Invalid verification link', 'error');
+
+            startCountdown(3);
+            setTimeout(() => {
+                redirectToApp('invalid');
+            }, 3000);
+        }
+
+        // Fallback redirect
+        setTimeout(() => {
+            if (document.visibilityState === 'visible') {
+                log('⏰ Fallback redirect triggered');
+                updateStatus('Taking too long. Redirecting...', 'loading');
+                redirectToApp('timeout');
+            }
+        }, 10000);
+    </script>
 </body>
 </html>

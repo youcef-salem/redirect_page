@@ -98,7 +98,7 @@ function redirectToApp(status, tokens = null) {
 }
 
 // Handle different scenarios
-if (accessToken && refreshToken) {
+if (accessToken && refreshToken && type === 'signup') {
   // This is a successful Supabase email confirmation
   console.log('Email confirmation successful');
   updateStatus('Email verified successfully! Redirecting to app...', 'success');
@@ -141,17 +141,35 @@ if (accessToken && refreshToken) {
   console.log('Payment status:', status);
   
   setTimeout(() => {
-    redirectToApp(status);
+    const deepLink = `myapp://payment/${status}`;
+    console.log('Redirecting to payment:', deepLink);
+    try {
+      window.location.replace(deepLink);
+    } catch (error) {
+      window.location.href = deepLink;
+    }
   }, 1500);
   
 } else {
-  // Unknown or invalid link
-  console.log('Unknown redirect type');
-  updateStatus('Invalid verification link.', 'error');
+  // Check if we have any Supabase parameters even without full tokens
+  const hasSupabaseParams = urlParams.get('type') || urlParams.get('token_hash') || urlParams.get('access_token');
   
-  setTimeout(() => {
-    redirectToApp('failed');
-  }, 3000);
+  if (hasSupabaseParams) {
+    console.log('Partial Supabase callback detected, treating as confirmation');
+    updateStatus('Processing email verification...', 'loading');
+    
+    setTimeout(() => {
+      redirectToApp('confirmed');
+    }, 2000);
+  } else {
+    // Unknown or invalid link
+    console.log('Unknown redirect type');
+    updateStatus('Invalid verification link.', 'error');
+    
+    setTimeout(() => {
+      redirectToApp('failed');
+    }, 3000);
+  }
 }
 
 // Fallback redirect after 10 seconds
